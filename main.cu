@@ -59,6 +59,7 @@ int get_cuda_device_props(){
 void runParallelKernel(int * histogram, int * fractal, double xCenter, double yCenter, int height, int width, double scale){
   // // SET NUMBER OF BYTES
   size_t nBytes = 5000 * sizeof(int);
+  size_t fBytes = width * height * sizeof(int);
 
   // SET UP DEVICE
   int dev = 0;
@@ -73,14 +74,14 @@ void runParallelKernel(int * histogram, int * fractal, double xCenter, double yC
 
   // ALLOCATE DEVICE MEMORY FOR HISTOGRAM AND FRACTAL ARRAYS
   SAFE_CALL(cudaMalloc<int>(&d_histogram, nBytes), "CUDA Malloc Failed");
-  SAFE_CALL(cudaMalloc<int>(&d_fractal, width * height * sizeof(int)), "CUDA Malloc Failed");
+  SAFE_CALL(cudaMalloc<int>(&d_fractal, fBytes), "CUDA Malloc Failed");
 
   // INITIALIZE AT ZERO
   SAFE_CALL(cudaMemset(d_histogram, 0, nBytes), "CUDA Malloc Failed");
 
   // COPY DATA FROM HOST TO DEVICE
   SAFE_CALL(cudaMemcpy(d_histogram, histogram, nBytes, cudaMemcpyHostToDevice), "CUDA Memcpy Host To Device Failed histogram");
-  SAFE_CALL(cudaMemcpy(d_fractal, fractal, nBytes, cudaMemcpyHostToDevice), "CUDA Memcpy Host To Device Failed fractal");
+  SAFE_CALL(cudaMemcpy(d_fractal, fractal, fBytes, cudaMemcpyHostToDevice), "CUDA Memcpy Host To Device Failed fractal");
 
   // EXECUTE THE KERNEL
   int blocks = get_cuda_device_props();
@@ -97,7 +98,7 @@ void runParallelKernel(int * histogram, int * fractal, double xCenter, double yC
   //   printf("%d ", histogram[i]);
   // }
   SAFE_CALL(cudaMemcpy(histogram, d_histogram, nBytes, cudaMemcpyDeviceToHost), "CUDA Memcpy Device To Host Failed d_histogram");
-  SAFE_CALL(cudaMemcpy(fractal, d_fractal, nBytes, cudaMemcpyDeviceToHost), "CUDA Memcpy Device To HOST Failed d_fractal");
+  SAFE_CALL(cudaMemcpy(fractal, d_fractal, fBytes, cudaMemcpyDeviceToHost), "CUDA Memcpy Device To HOST Failed d_fractal");
 
   // Free device global memory
   SAFE_CALL(cudaFree(d_histogram), "Error freeing memory");
