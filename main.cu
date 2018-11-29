@@ -25,6 +25,7 @@
 __global__ void calculate_iterations_GPU(int *histogram, int *fractal, double xCenter, double yCenter, int height, int width, double scale){
   unsigned int ix = blockIdx.x * blockDim.x + threadIdx.x;
   unsigned int iy = blockIdx.y * blockDim.y + threadIdx.y;
+
   if(ix < width && iy < height){
     double xFractal = ((double)ix - width/2.0f) * scale + xCenter;
     double yFractal = ((double)iy - height/2.0f) * scale + yCenter;
@@ -37,9 +38,11 @@ __global__ void calculate_iterations_GPU(int *histogram, int *fractal, double xC
         break;
       iterations++;
     }
+
     if ((iy * width + ix) < (height * width)) {
       fractal[iy * width + ix] = iterations;
     }
+    
     if (iterations < 5000) {
       histogram[iterations]++;
     }
@@ -70,7 +73,7 @@ void runParallelKernel(int * histogram, int * fractal, double xCenter, double yC
 
   // ALLOCATE DEVICE MEMORY FOR HISTOGRAM AND FRACTAL ARRAYS
   SAFE_CALL(cudaMalloc<int>(&d_histogram, nBytes), "CUDA Malloc Failed");
-  SAFE_CALL(cudaMalloc<int>(&d_fractal, nBytes), "CUDA Malloc Failed");
+  SAFE_CALL(cudaMalloc<int>(&d_fractal, width * height * sizeof(int)), "CUDA Malloc Failed");
 
   // INITIALIZE AT ZERO
   SAFE_CALL(cudaMemset(d_histogram, 0, nBytes), "CUDA Malloc Failed");
